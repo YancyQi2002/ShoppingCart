@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>购物车</title>
+		
+		<style>			
+			#app{width: 800px; margin: 20px auto;}
+			
+			.modify-amount{
+				font-size: 22px;
+				cursor: pointer;
+				user-select: none;
+			}
+			
+			input[type=number]{
+				width: 30px;
+				height: 18px;
+			}
+			
+			li{list-style: none; margin-bottom: 10px;}
+			.li-books{float: left;}
+			
+			.row{							
+				margin-bottom: 20px;
+				overflow: auto;/*解决ul超出div范围*/
+			}
+		</style>
+		
+		<script src="./js/vue.js"></script>
+	</head>
+	
+	<body>
+		<div id="app">
+			
+			<div class="row">
+				<p>销售的图书：</p>
+				<ul>				
+					<li v-for="book in books" class="li-books">
+						<ul>
+							<li>书名：{{book.name}}</li>
+							<li>价格：{{book.price}}</li>
+							<li>折扣：{{book.discount}}</li>
+							<li>
+								<button @click="buyBook(book.id)">Buy</button>
+							</li>
+						</ul>
+					</li>
+				</ul>
+			</div> <!--row-->
+			
+			<div class="row">
+				<p>购物车：<span v-show="isCartEmpty">空空如也。。。</span></p>			
+				<ul>
+					<li v-for="buy in buyBooks" class="li-books">
+						<ul>
+							<li>书名：{{lookBook(buy.id).name}}</li>
+							<li>价格：{{lookBook(buy.id).price}}</li>
+							<li>折扣：{{lookBook(buy.id).discount}}</li>
+							<li>
+								数量：
+								<span class="modify-amount" @click="cutOne(buy.id)">-</span>
+								<input type="number" v-model="buy.count" />
+								<span class="modify-amount" @click="addOne(buy.id)">+</span>
+							</li>
+							<li>本书总价：{{lookBook(buy.id).price * lookBook(buy.id).discount * buy.count}}</li>
+							<li><button @click="cutBook(buy.id)">删除</button></li>
+						</ul>
+					</li>
+				</ul>
+			</div><!--row-->
+			
+			<div class="row">总价：{{total}}</div>		
+		</div>
+		
+		<script>			
+			new Vue({
+				el:'#app',
+				data:{
+					books:[
+						{id:1,name:'红楼梦',price:20,discount:0.7,},
+						{id:2,name:'西游记',price:25,discount:0.8,},
+						{id:3,name:'三国演义',price:30,discount:0.6,},
+						{id:4,name:'水浒传',price:40,discount:0.5,},
+					],
+					buyBooks:[ {id:1, count:2}, {id:2, count:4}, {id:3, count:1}],
+															
+				}, //data
+				
+				methods:{
+					//从books中向buyBooks添加book.id
+					buyBook(id){						
+						let book = {id:id,count:1}
+						let i
+						for(i = 0;i < this.buyBooks.length; i ++) {
+							if(this.buyBooks[i].id == id) {
+								this.buyBooks[i].count++
+								break
+							}
+						}
+						// 书不在购物车
+						if(i == this.buyBooks.length)
+							this.buyBooks.push(book)
+					},
+					
+					//根据id，返回对应的book
+					findBook(id){//使用带参数的计算属性《替代》，函数不可以缓存，重复计算
+						
+					},
+					
+					//购物车中书数量增加1	
+					addOne(id){					
+						for(let item of this.buyBooks) {
+							if(id == item.id) {
+								item.count++
+								break
+							}
+						}
+					},
+					
+					//购物车中书数量减少1	
+					cutOne(id){						
+						for(let i = 0;i < this.buyBooks.length;i++) {
+							if(id == this.buyBooks[i].id) {
+								this.buyBooks[i].count--
+								if(this.buyBooks[i].count <= 0) {
+									// 数量为0,删除购物车中书
+									this.buyBooks.splice(i,1)
+								}
+								break
+							}
+						}
+					
+					},
+					
+					//从购物车删除一本书
+					cutBook(id){
+						for(let i = 0;i < this.buyBooks.length; i++) {
+							if(id == this.buyBooks[i].id) {
+								this.buyBooks.splice(i,1)
+								break
+							}
+						}
+					},	
+					
+				},//methods
+				
+				computed:{
+					//显示购物车为空
+					isCartEmpty(){
+						return this.buyBooks.length == 0
+					},
+					
+					//总价格
+					total(){
+						let amount = 0
+						for(let item of this.buyBooks) {
+							let book = this.lookBook(item.id)
+							amount += book.price * book.discount * item.count
+						}
+						return amount
+					},	//total		
+					
+					lookBook() { //带参数的计算属性，计算属性可以缓存，不必重复计算
+						return function(id) {
+							for(let item of this.books) {
+								if(id == item.id)
+									return item
+							}
+						}
+					},					
+									
+				},//computed
+				
+				watch:{
+					buyBooks: {
+						handler(value) {
+							for(let item of this.buyBooks) {
+								if(item.count <= 0)item.count = 1
+								if(item.count > 10)item.count = 10
+							}
+						},
+						deep:true
+					}
+					
+				}, //watch
+				
+				
+			})	//Vue		
+	
+		</script>
+		
+	</body>
+</html>
